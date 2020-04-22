@@ -1,0 +1,1 @@
+Animated map showing the spread of the pandemic, using latest data.

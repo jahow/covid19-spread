@@ -109,7 +109,7 @@ export function init() {
   document.querySelector(".date-slider-container").appendChild(dateRange);
 
   // react to date change
-  dateRange.date$.subscribe(newDate => {
+  dateRange.selectedDate$.subscribe(newDate => {
     currentDate = newDate;
     covidData.changed();
   });

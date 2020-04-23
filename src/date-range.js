@@ -12,7 +12,11 @@ class DateRange extends HTMLElement {
   init() {
     this.innerHTML = `
 <div class="date-label"></div>
-<input type="range" type="number" style="width: 100%"/>`;
+<input type="range" type="number" style="display: block; width: 100%"/>
+<div>
+  <button type="button" class="play">Animate</button>
+  <button type="button" class="pause" style="display: none">Pause</button>
+</div>`;
 
     /**
      * @type {HTMLElement}
@@ -24,6 +28,16 @@ class DateRange extends HTMLElement {
      */
     this.slider = this.querySelector("input[type=range]");
 
+    /**
+     * @type {HTMLButtonElement}
+     */
+    this.playButton = this.querySelector("button.play");
+
+    /**
+     * @type {HTMLButtonElement}
+     */
+    this.pauseButton = this.querySelector("button.pause");
+
     this.minDate = 0;
     this.maxDate = 0;
     this.slider.min = this.minDate;
@@ -33,14 +47,27 @@ class DateRange extends HTMLElement {
     this.slider.addEventListener("input", this.handleDateChange.bind(this));
 
     this.date$ = new BehaviorSubject(this.selectedDate);
+
+    this.playing = false;
+    this.playButton.addEventListener("click", this.startAnimation.bind(this));
+    this.pauseButton.addEventListener("click", this.stopAnimation.bind(this));
   }
 
   get selectedDate() {
     return parseInt(this.slider.value);
   }
 
+  set selectedDate(value) {
+    this.slider.value = value;
+    this.handleDateChange();
+  }
+
   get selectedDate$() {
     return this.date$;
+  }
+
+  get isMaxValue() {
+    return this.selectedDate === this.maxDate;
   }
 
   handleDateChange() {
@@ -54,6 +81,30 @@ class DateRange extends HTMLElement {
     this.slider.min = this.minDate;
     this.slider.max = this.maxDate;
     this.handleDateChange();
+  }
+
+  startAnimation() {
+    this.playButton.style.display = "none";
+    this.pauseButton.style.display = "initial";
+    if (this.isMaxValue) {
+      this.selectedDate = this.minDate;
+    }
+    this.cancelKey = setInterval(this.animationLoop.bind(this), 100);
+  }
+
+  stopAnimation() {
+    this.playButton.style.display = "initial";
+    this.pauseButton.style.display = "none";
+    clearInterval(this.cancelKey);
+  }
+
+  animationLoop() {
+    const date = new Date(this.selectedDate);
+    date.setHours(date.getHours() + 6);
+    this.selectedDate = date.valueOf();
+    if (this.isMaxValue) {
+      this.stopAnimation();
+    }
   }
 }
 

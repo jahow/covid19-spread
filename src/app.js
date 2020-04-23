@@ -15,6 +15,10 @@ import Circle from "ol/style/Circle";
 import Stroke from "ol/style/Stroke";
 
 let currentDate = 0;
+function getCurrentIsoDate() {
+  const date = new Date(currentDate);
+  return date.toISOString().substr(0, 10);
+}
 
 const densityStyleCache = {};
 const covidStyleCache = {};
@@ -57,7 +61,8 @@ function covidStyleFn(feature) {
     covidStyleCache[key] = style;
   }
 
-  const radius = Math.sqrt(feature.get("latestCount")) / 6;
+  const currentValue = feature.get(`data-${getCurrentIsoDate()}`) || 0;
+  const radius = Math.sqrt(currentValue) / 6;
   style.getImage().setRadius(radius);
   return [style];
 }
@@ -106,7 +111,7 @@ export function init() {
   // react to date change
   dateRange.date$.subscribe(newDate => {
     currentDate = newDate;
-    olMap.render();
+    covidData.changed();
   });
 
   // load map data
@@ -119,6 +124,15 @@ export function init() {
       let prevIndex = covidCsv.indexOf("\n") + 1; // scan past the header line
       let curIndex;
       let lineIndex = 0;
+      const timeseriesColumnStart = 4;
+      const headers = covidCsv.substr(0, covidCsv.indexOf("\n")).split(",");
+
+      function toIso(headerLabel) {
+        const parts = /([0-9]+)\/([0-9]+)\/([0-9]+)/.exec(headerLabel);
+        const month = parts[1].padStart(2, "0");
+        const day = parts[2].padStart(2, "0");
+        return `20${parts[3]}-${month}-${day}`;
+      }
 
       while ((curIndex = covidCsv.indexOf("\n", prevIndex)) !== -1) {
         const line = covidCsv
@@ -136,28 +150,23 @@ export function init() {
           continue;
         }
 
-        features.push(
-          new Feature({
-            id: lineIndex++,
-            country: line[1],
-            region: line[0],
-            geometry: new Point(coords),
-            latestCount: line[line.length - 1]
-          })
-        );
+        const f = new Feature({
+          id: lineIndex++,
+          country: line[1],
+          region: line[0],
+          geometry: new Point(coords)
+        });
+        for (let i = timeseriesColumnStart; i < line.length; i++) {
+          f.set(`data-${toIso(headers[i])}`, line[i]);
+        }
+        features.push(f);
       }
 
       covidData.getSource().addFeatures(features);
 
       // init date range slider
-      const headers = covidCsv.substr(0, covidCsv.indexOf("\n")).split(",");
-      const firstDay = headers[4];
+      const firstDay = headers[timeseriesColumnStart];
       const lastDay = headers[headers.length - 1];
-
-      function toIso(headerLabel) {
-        const parts = /([0-9]+)\/([0-9]+)\/([0-9]+)/.exec(headerLabel);
-        return `20${parts[3]}-${parts[1]}-${parts[2]}`;
-      }
 
       dateRange.setRange(
         new Date(toIso(firstDay)).valueOf(),

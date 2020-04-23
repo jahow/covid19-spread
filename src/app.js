@@ -14,6 +14,8 @@ import Point from "ol/geom/Point";
 import Circle from "ol/style/Circle";
 import Stroke from "ol/style/Stroke";
 
+let currentDate = 0;
+
 const densityStyleCache = {};
 const covidStyleCache = {};
 
@@ -98,6 +100,15 @@ export function init() {
     ]
   });
 
+  const dateRange = document.createElement("date-range");
+  document.querySelector(".date-slider-container").appendChild(dateRange);
+
+  // react to date change
+  dateRange.date$.subscribe(newDate => {
+    currentDate = newDate;
+    olMap.render();
+  });
+
   // load map data
   fetch(
     "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
@@ -139,9 +150,19 @@ export function init() {
       covidData.getSource().addFeatures(features);
 
       // init date range slider
-      const dateRange = document.createElement("date-range");
-      document.querySelector(".date-slider-container").appendChild(dateRange);
-      dateRange.setRange(new Date("2020-01-01").valueOf(), Date.now());
+      const headers = covidCsv.substr(0, covidCsv.indexOf("\n")).split(",");
+      const firstDay = headers[4];
+      const lastDay = headers[headers.length - 1];
+
+      function toIso(headerLabel) {
+        const parts = /([0-9]+)\/([0-9]+)\/([0-9]+)/.exec(headerLabel);
+        return `20${parts[3]}-${parts[1]}-${parts[2]}`;
+      }
+
+      dateRange.setRange(
+        new Date(toIso(firstDay)).valueOf(),
+        new Date(toIso(lastDay)).valueOf()
+      );
     });
 
   fetch("/countries.json")

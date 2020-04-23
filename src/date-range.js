@@ -1,3 +1,5 @@
+import { BehaviorSubject } from "rxjs";
+
 class DateRange extends HTMLElement {
   constructor() {
     super();
@@ -24,28 +26,34 @@ class DateRange extends HTMLElement {
 
     this.minDate = 0;
     this.maxDate = 0;
-    this.update();
+    this.slider.min = this.minDate;
+    this.slider.max = this.maxDate;
 
-    this.slider.addEventListener("change", this.update.bind(this));
-    this.slider.addEventListener("input", this.update.bind(this));
+    this.slider.addEventListener("change", this.handleDateChange.bind(this));
+    this.slider.addEventListener("input", this.handleDateChange.bind(this));
+
+    this.date$ = new BehaviorSubject(this.selectedDate);
   }
 
   get selectedDate() {
     return parseInt(this.slider.value);
   }
 
-  update() {
-    this.slider.min = this.minDate;
-    this.slider.max = this.maxDate;
+  get selectedDate$() {
+    return this.date$;
+  }
+
+  handleDateChange() {
     this.dateLabel.innerText = new Date(this.selectedDate).toDateString();
+    this.date$.next(this.selectedDate);
   }
 
   setRange(minDate, maxDate) {
     this.minDate = minDate;
-
     this.maxDate = maxDate;
-
-    this.update();
+    this.slider.min = this.minDate;
+    this.slider.max = this.maxDate;
+    this.handleDateChange();
   }
 }
 

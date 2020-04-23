@@ -137,6 +137,11 @@ export function init() {
       }
 
       covidData.getSource().addFeatures(features);
+
+      // init date range slider
+      const dateRange = document.createElement("date-range");
+      document.querySelector(".date-slider-container").appendChild(dateRange);
+      dateRange.setRange(new Date("2020-01-01").valueOf(), Date.now());
     });
 
   fetch("/countries.json")

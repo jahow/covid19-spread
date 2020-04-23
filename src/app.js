@@ -174,7 +174,7 @@ export function init() {
       );
     });
 
-  fetch("/countries.json")
+  fetch("countries.json")
     .then(response => response.json())
     .then(countries => {
       const densityFeatures = new GeoJSON().readFeatures(countries, {

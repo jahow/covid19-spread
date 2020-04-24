@@ -91,6 +91,7 @@ class DateRange extends HTMLElement {
       this.selectedDate = this.minDate;
     }
     this.playing = true;
+    this.prevTimestamp = null;
     requestAnimationFrame(this.animationLoop.bind(this));
   }
 

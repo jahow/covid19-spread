@@ -17,6 +17,7 @@ import Stroke from "ol/style/Stroke";
 let currentDate = 0;
 function getCurrentCovidData(feature) {
   const current = new Date(currentDate);
+  current.setHours(0, 0, 0, 0);
   const next = new Date(current);
   next.setHours(current.getHours() + 24);
   const isoDate0 = current.toISOString().substr(0, 10);
@@ -24,7 +25,7 @@ function getCurrentCovidData(feature) {
 
   const value0 = feature.get(`data-${isoDate0}`) || 0;
   const value1 = feature.get(`data-${isoDate1}`) || 0;
-  const ratio = current.getHours() / 24;
+  const ratio = (currentDate - current.valueOf()) / 86400000; // one day is 86400000ms
   return value0 * (1 - ratio) + value1 * ratio;
 }
 

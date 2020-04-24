@@ -38,6 +38,11 @@ const covidFillColor = "rgba(255,92,0,0.75)";
 const densityStyleCache = {};
 const covidStyleCache = {};
 
+function getDensityFillColor(density) {
+  const alpha = Math.min(1, density / 400);
+  return `rgba(51, 25, 120, ${alpha * 0.7})`;
+}
+
 function densityStyleFn(feature) {
   const key = feature.get("code");
   let style = densityStyleCache[key];
@@ -51,8 +56,7 @@ function densityStyleFn(feature) {
     densityStyleCache[key] = style;
   }
 
-  const alpha = Math.min(1, feature.get("pop_density") / 300);
-  style.getFill().setColor(`rgba(51, 25, 120, ${alpha * 0.7})`);
+  style.getFill().setColor(getDensityFillColor(feature.get("pop_density")));
   return [style];
 }
 
@@ -120,15 +124,29 @@ export function init() {
     ]
   });
 
-  const legend = document.createElement("legend-block");
-  legend.setStyles(
-    [100, 1000, 4000, 10000, 40000, 100000].map(count => ({
+  const covidLegend = document.createElement("legend-block");
+  covidLegend.setStyles(
+    "Amount of death due to Covid19",
+    "circle",
+    [100, 1000, 4000, 10000, 40000].map(count => ({
       label: `${count.toLocaleString()} deaths`,
       color: covidFillColor,
       radius: getRadiusForCovidCount(count)
     }))
   );
-  document.querySelector(".legend-container").appendChild(legend);
+  document.querySelector(".covid-legend").appendChild(covidLegend);
+
+  const densityLegend = document.createElement("legend-block");
+  densityLegend.setStyles(
+    "Population density",
+    "square",
+    [0, 100, 200, 300, 400].map(density => ({
+      label: `${density} per km²`,
+      color: getDensityFillColor(density),
+      radius: 12
+    }))
+  );
+  document.querySelector(".density-legend").appendChild(densityLegend);
 
   const dateRange = document.createElement("date-range");
   document.querySelector(".date-slider-container").appendChild(dateRange);

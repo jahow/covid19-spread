@@ -1,4 +1,4 @@
-# Codiv19-spread
+# Covid9-spread
 
 ![image](https://user-images.githubusercontent.com/10629150/80184635-3fb7e500-860b-11ea-92cc-4274cdd06554.png)
 

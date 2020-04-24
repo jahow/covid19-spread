@@ -13,6 +13,7 @@ import { printCountriesGeoJSON } from "./generate-data";
 import Point from "ol/geom/Point";
 import Circle from "ol/style/Circle";
 import Stroke from "ol/style/Stroke";
+import { defaults as defaultControls } from "ol/control";
 
 let currentDate = 0;
 function getCurrentCovidData(feature) {
@@ -121,13 +122,15 @@ export function init() {
       }),
       density,
       covidData
-    ]
+    ],
+    controls: defaultControls({ attribution: false })
   });
 
   const covidLegend = document.createElement("legend-block");
   covidLegend.setStyles(
     "Amount of death due to Covid19",
     "circle",
+    "<a href='https://github.com/CSSEGISandData/COVID-19'>John Hopkins University</a>",
     [100, 1000, 4000, 10000, 40000].map(count => ({
       label: `${count.toLocaleString()} deaths`,
       color: covidFillColor,
@@ -140,6 +143,7 @@ export function init() {
   densityLegend.setStyles(
     "Population density",
     "square",
+    "<a href='https://datahub.io/world-bank/en.pop.dnst'>World Bank</a>",
     [0, 100, 200, 300, 400].map(density => ({
       label: `${density} per km²`,
       color: getDensityFillColor(density),

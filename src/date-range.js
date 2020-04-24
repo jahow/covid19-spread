@@ -11,11 +11,15 @@ class DateRange extends HTMLElement {
 
   init() {
     this.innerHTML = `
-<div class="date-label"></div>
+<div class="date-label" style="font-size: 1.2em; margin-bottom: 0.5em"></div>
 <input type="range" type="number" style="display: block; width: 100%"/>
-<div>
-  <button type="button" class="play">Animate</button>
-  <button type="button" class="pause" style="display: none">Pause</button>
+<div style="margin-top: 0.5em">
+  <button type="button" class="play" style="font-size: 1.1em;">
+    Animate
+  </button>
+  <button type="button" class="pause" style="font-size: 1.1em; display: none">
+    Pause
+  </button>
 </div>`;
 
     /**

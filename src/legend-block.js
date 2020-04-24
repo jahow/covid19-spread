@@ -13,9 +13,10 @@ class LegendBlock extends HTMLElement {
   /**
    * @param {string} title
    * @param {'circle'|'square'} type
+   * @param {string} attribution
    * @param {LegendStyle[]} styles
    */
-  setStyles(title, type, styles) {
+  setStyles(title, type, attribution, styles) {
     this.innerHTML = `
 <div style="font-weight: bold; font-size: 1.2em; margin-bottom: 0.5em">${title}</div>
 <div style="display: flex; flex-direction: row; align-items: center">
@@ -31,7 +32,8 @@ class LegendBlock extends HTMLElement {
 </div>`
    )
    .join("\n")}
-</div>`;
+</div>
+<div style="font-size: 0.9em; text-align: right; margin-top: 0.5em">From: ${attribution}</div>`;
   }
 }
 

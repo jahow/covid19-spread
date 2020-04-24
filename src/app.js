@@ -15,9 +15,17 @@ import Circle from "ol/style/Circle";
 import Stroke from "ol/style/Stroke";
 
 let currentDate = 0;
-function getCurrentIsoDate() {
-  const date = new Date(currentDate);
-  return date.toISOString().substr(0, 10);
+function getCurrentCovidData(feature) {
+  const current = new Date(currentDate);
+  const next = new Date(current);
+  next.setHours(current.getHours() + 24);
+  const isoDate0 = current.toISOString().substr(0, 10);
+  const isoDate1 = next.toISOString().substr(0, 10);
+
+  const value0 = feature.get(`data-${isoDate0}`) || 0;
+  const value1 = feature.get(`data-${isoDate1}`) || 0;
+  const ratio = current.getHours() / 24;
+  return value0 * (1 - ratio) + value1 * ratio;
 }
 
 const densityStyleCache = {};
@@ -61,7 +69,7 @@ function covidStyleFn(feature) {
     covidStyleCache[key] = style;
   }
 
-  const currentValue = feature.get(`data-${getCurrentIsoDate()}`) || 0;
+  const currentValue = getCurrentCovidData(feature);
   const radius = Math.sqrt(currentValue) / 6;
   style.getImage().setRadius(radius);
   return [style];

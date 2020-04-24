@@ -49,6 +49,7 @@ class DateRange extends HTMLElement {
     this.date$ = new BehaviorSubject(this.selectedDate);
 
     this.playing = false;
+    this.prevTimestamp = null;
     this.playButton.addEventListener("click", this.startAnimation.bind(this));
     this.pauseButton.addEventListener("click", this.stopAnimation.bind(this));
   }
@@ -89,21 +90,31 @@ class DateRange extends HTMLElement {
     if (this.isMaxValue) {
       this.selectedDate = this.minDate;
     }
-    this.cancelKey = setInterval(this.animationLoop.bind(this), 100);
+    this.playing = true;
+    requestAnimationFrame(this.animationLoop.bind(this));
   }
 
   stopAnimation() {
     this.playButton.style.display = "initial";
     this.pauseButton.style.display = "none";
-    clearInterval(this.cancelKey);
+    this.playing = false;
   }
 
-  animationLoop() {
-    const date = new Date(this.selectedDate);
-    date.setHours(date.getHours() + 6);
-    this.selectedDate = date.valueOf();
-    if (this.isMaxValue) {
-      this.stopAnimation();
+  animationLoop(timestamp) {
+    if (this.prevTimestamp) {
+      const hoursRatio = 80.121345; // how many hours in one second
+      const date = new Date(this.selectedDate);
+      date.setHours(
+        date.getHours() + (timestamp - this.prevTimestamp) * hoursRatio * 0.001
+      );
+      this.selectedDate = date.valueOf();
+      if (this.isMaxValue) {
+        this.stopAnimation();
+      }
+    }
+    this.prevTimestamp = timestamp;
+    if (this.playing) {
+      requestAnimationFrame(this.animationLoop.bind(this));
     }
   }
 }

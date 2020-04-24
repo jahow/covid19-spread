@@ -28,6 +28,12 @@ function getCurrentCovidData(feature) {
   return value0 * (1 - ratio) + value1 * ratio;
 }
 
+function getRadiusForCovidCount(count) {
+  return Math.sqrt(count) / 6;
+}
+
+const covidFillColor = "rgba(255,92,0,0.75)";
+
 const densityStyleCache = {};
 const covidStyleCache = {};
 
@@ -57,7 +63,7 @@ function covidStyleFn(feature) {
     style = new Style({
       image: new Circle({
         fill: new Fill({
-          color: "rgba(255,92,0,0.75)"
+          color: covidFillColor
         }),
         stroke: new Stroke({
           color: "rgba(255, 255, 255, 0.4)",
@@ -70,7 +76,7 @@ function covidStyleFn(feature) {
   }
 
   const currentValue = getCurrentCovidData(feature);
-  const radius = Math.sqrt(currentValue) / 6;
+  const radius = getRadiusForCovidCount(currentValue);
   style.getImage().setRadius(radius);
   return [style];
 }
@@ -112,6 +118,16 @@ export function init() {
       covidData
     ]
   });
+
+  const legend = document.createElement("legend-block");
+  legend.setStyles(
+    [100, 1000, 4000, 10000, 40000, 100000].map(count => ({
+      label: `${count.toLocaleString()} deaths`,
+      color: covidFillColor,
+      radius: getRadiusForCovidCount(count)
+    }))
+  );
+  document.querySelector(".legend-container").appendChild(legend);
 
   const dateRange = document.createElement("date-range");
   document.querySelector(".date-slider-container").appendChild(dateRange);

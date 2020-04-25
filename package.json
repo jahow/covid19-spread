@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier --write **/*.js",
     "build": "webpack -p",
-    "deploy": "rm -rf ghpages && npm run build && mkdir ghpages && cp dist/* ghpages && cp -r public/* ghpages && git checkout gh-pages && mv ghpages/* ./ && git add . && git commit -m update && git push $1"
+    "deploy": "npm run build && mkdir ghpages && cp dist/* ghpages && cp -r public/* ghpages && git checkout gh-pages && cp -r ghpages/* ./ && rm -rf ghpages && git add . && git commit -m update && git push $1 gh-pages"
   },
   "author": "",
   "license": "MIT",

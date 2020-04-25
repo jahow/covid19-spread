@@ -14,6 +14,10 @@ import Point from "ol/geom/Point";
 import Circle from "ol/style/Circle";
 import Stroke from "ol/style/Stroke";
 import { defaults as defaultControls } from "ol/control";
+import SelectInteraction from "ol/interaction/Select";
+import { pointerMove } from "ol/events/condition";
+import Overlay from "ol/Overlay";
+import { combineLatest, Subject } from "rxjs";
 
 let currentDate = 0;
 function getCurrentCovidData(feature) {
@@ -27,7 +31,7 @@ function getCurrentCovidData(feature) {
   const value0 = feature.get(`data-${isoDate0}`) || 0;
   const value1 = feature.get(`data-${isoDate1}`) || 0;
   const ratio = (currentDate - current.valueOf()) / 86400000; // one day is 86400000ms
-  return value0 * (1 - ratio) + value1 * ratio;
+  return Math.round(value0 * (1 - ratio) + value1 * ratio);
 }
 
 function getRadiusForCovidCount(count) {
@@ -35,6 +39,7 @@ function getRadiusForCovidCount(count) {
 }
 
 const covidFillColor = "rgba(255,92,0,0.75)";
+const covidStrokeColor = "rgba(255,218,206,0.4)";
 
 const densityStyleCache = {};
 const covidStyleCache = {};
@@ -72,7 +77,7 @@ function covidStyleFn(feature) {
           color: covidFillColor
         }),
         stroke: new Stroke({
-          color: "rgba(255, 255, 255, 0.4)",
+          color: covidStrokeColor,
           width: 2
         }),
         radius: 0
@@ -84,6 +89,11 @@ function covidStyleFn(feature) {
   const currentValue = getCurrentCovidData(feature);
   const radius = getRadiusForCovidCount(currentValue);
   style.getImage().setRadius(radius);
+  const strokeWidth = Math.max(2, 10 - radius); // this is to insure a minimum circle size
+  style
+    .getImage()
+    .getStroke()
+    .setWidth(strokeWidth);
   return style;
 }
 
@@ -162,6 +172,54 @@ export function init() {
     covidData.changed();
   });
 
+  // add select interaction
+  const popupInteraction = new SelectInteraction({
+    layers: [covidData],
+    condition: pointerMove,
+    style: null
+  });
+  olMap.addInteraction(popupInteraction);
+  let selected$ = new Subject();
+  popupInteraction.on("select", evt => {
+    if (!evt.selected.length) {
+      popup.setPosition(null);
+    } else {
+      const feature = evt.selected[0];
+      selected$.next(feature);
+      popup.setPosition(feature.getGeometry().getFlatCoordinates());
+    }
+  });
+
+  // popup
+  const popupEl = document.createElement("div");
+  popupEl.style.borderRadius = "4px";
+  popupEl.style.width = "8em";
+  popupEl.style.background = "white";
+  popupEl.style.boxShadow = "0px 3px 4px rgba(0, 0, 0, 0.2)";
+  popupEl.style.padding = "0.5em";
+  popupEl.style.position = "absolute";
+  popupEl.style.left = "0";
+  popupEl.style.bottom = "1em";
+  popupEl.style.transform = "translate(-50%, 0)";
+  popupEl.style.pointerEvents = "none";
+  const popup = new Overlay({
+    element: popupEl
+  });
+  olMap.addOverlay(popup);
+  combineLatest([selected$, dateRange.selectedDate$]).subscribe(
+    ([selected]) => {
+      popup.getElement().innerHTML = `
+        <strong>${selected.get("country")}</strong><br>
+        ${
+          selected.get("region")
+            ? `<small>${selected.get("region")}</small><br>`
+            : ""
+        }
+        ${getCurrentCovidData(selected)} deaths
+      `;
+    }
+  );
+
   // load map data
   fetch(
     "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
@@ -229,7 +287,5 @@ export function init() {
         featureProjection: view.getProjection()
       });
       density.getSource().addFeatures(densityFeatures);
-
-      const covidFeatures = Object.keys(covidData).map(country => {});
     });
 }

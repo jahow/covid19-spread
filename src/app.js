@@ -4,6 +4,7 @@ import TileLayer from "ol/layer/Tile";
 import XYZ from "ol/source/XYZ";
 import { fromLonLat } from "ol/proj";
 import VectorLayer from "ol/layer/Vector";
+import VectorImageLayer from "ol/layer/VectorImage";
 import VectorSource from "ol/source/Vector";
 import GeoJSON from "ol/format/GeoJSON";
 import Feature from "ol/Feature";
@@ -88,7 +89,8 @@ function covidStyleFn(feature) {
 }
 
 export function init() {
-  const density = new VectorLayer({
+  const density = new VectorImageLayer({
+    imageRatio: 2,
     source: new VectorSource({
       attributions: "World Bank"
     }),

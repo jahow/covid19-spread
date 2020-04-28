@@ -35,7 +35,7 @@ function getCurrentCovidData(feature) {
 }
 
 function getRadiusForCovidCount(count) {
-  return Math.sqrt(count) / 6;
+  return Math.max(2, Math.sqrt(count) / 6);
 }
 
 const covidFillColor = "rgba(255,92,0,0.75)";
@@ -87,6 +87,10 @@ function covidStyleFn(feature) {
   }
 
   const currentValue = getCurrentCovidData(feature);
+  if (!currentValue) {
+    return null;
+  }
+
   const radius = getRadiusForCovidCount(currentValue);
   style.getImage().setRadius(radius);
   const strokeWidth = Math.max(2, 10 - radius); // this is to insure a minimum circle size

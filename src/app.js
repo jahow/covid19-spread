@@ -59,7 +59,7 @@ function densityStyleFn(feature) {
   }
 
   style.getFill().setColor(getDensityFillColor(feature.get("pop_density")));
-  return [style];
+  return style;
 }
 
 function covidStyleFn(feature) {
@@ -85,7 +85,7 @@ function covidStyleFn(feature) {
   const currentValue = getCurrentCovidData(feature);
   const radius = getRadiusForCovidCount(currentValue);
   style.getImage().setRadius(radius);
-  return [style];
+  return style;
 }
 
 export function init() {

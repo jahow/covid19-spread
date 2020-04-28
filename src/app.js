@@ -10,7 +10,6 @@ import GeoJSON from "ol/format/GeoJSON";
 import Feature from "ol/Feature";
 import Style from "ol/style/Style";
 import Fill from "ol/style/Fill";
-import { printCountriesGeoJSON } from "./generate-data";
 import Point from "ol/geom/Point";
 import Circle from "ol/style/Circle";
 import Stroke from "ol/style/Stroke";

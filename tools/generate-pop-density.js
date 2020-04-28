@@ -15,6 +15,8 @@ function readFilePromise(path) {
   });
 }
 
+const geoJson = new GeoJSON();
+
 function getCountriesGeoJSON() {
   const dataDir = path.resolve(__dirname, "source-data");
   return Promise.all([
@@ -23,15 +25,20 @@ function getCountriesGeoJSON() {
     ),
     readFilePromise(
       path.resolve(dataDir, "country-density.json")
-    ).then(response => JSON.parse(response))
-  ]).then(([countries, densities]) => {
+    ).then(response => JSON.parse(response)),
+    readFilePromise(path.resolve(dataDir, "us-states.json")).then(response =>
+      JSON.parse(response)
+    )
+  ]).then(([countries, densities, usStates]) => {
     const densityByCode = {};
     densities.forEach(country => {
       densityByCode[country["Country Code"]] = country;
     });
 
-    const features = new GeoJSON()
+    // all countries *except* USA
+    let features = geoJson
       .readFeatures(countries)
+      .filter(sourceFeature => sourceFeature.get("adm0_a3") !== "USA")
       .filter(sourceFeature => {
         const data = densityByCode[sourceFeature.get("adm0_a3")];
         if (!data) {
@@ -62,7 +69,20 @@ function getCountriesGeoJSON() {
         return f;
       });
 
-    return new GeoJSON().writeFeatures(features);
+    // add US states
+    features = features.concat(
+      geoJson.readFeatures(usStates).map(
+        sourceFeature =>
+          new Feature({
+            geometry: sourceFeature.getGeometry(),
+            pop_density: sourceFeature.get("density") / 2.58999, // convert to per km²
+            name: sourceFeature.get("name"),
+            code: `USA-${sourceFeature.getId()}`
+          })
+      )
+    );
+
+    return geoJson.writeFeatures(features);
   });
 }
 

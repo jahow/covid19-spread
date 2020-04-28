@@ -1,10 +1,29 @@
-import GeoJSON from "ol/format/GeoJSON";
-import Feature from "ol/Feature";
+import GeoJSON from "ol/format/GeoJSON.js";
+import Feature from "ol/Feature.js";
+import path from "path";
+import fs from "fs";
 
-export function printCountriesGeoJSON() {
-  Promise.all([
-    fetch("/source-data/countries.json").then(response => response.json()),
-    fetch("/source-data/country-density.json").then(response => response.json())
+function readFilePromise(path) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path, (err, file) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(file);
+    });
+  });
+}
+
+function getCountriesGeoJSON() {
+  const dataDir = path.resolve(__dirname, "source-data");
+  return Promise.all([
+    readFilePromise(path.resolve(dataDir, "countries.json")).then(response =>
+      JSON.parse(response)
+    ),
+    readFilePromise(
+      path.resolve(dataDir, "country-density.json")
+    ).then(response => JSON.parse(response))
   ]).then(([countries, densities]) => {
     const densityByCode = {};
     densities.forEach(country => {
@@ -43,6 +62,17 @@ export function printCountriesGeoJSON() {
         return f;
       });
 
-    console.log(new GeoJSON().writeFeatures(features));
+    return new GeoJSON().writeFeatures(features);
   });
 }
+
+getCountriesGeoJSON().then(geojson => {
+  const filePath = path.resolve(__dirname, "../public/countries.json");
+  fs.writeFile(filePath, geojson, { flag: "w" }, err => {
+    if (err) {
+      console.error(err);
+    } else {
+      console.log("Dataset successfully recreated");
+    }
+  });
+});

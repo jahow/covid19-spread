@@ -17,3 +17,8 @@ To run the project locally:
 ```bash
 $ npm run start
 ```
+
+To rebuild the population density dataset, run:
+```bash
+$ node -r esm tools/generate-pop-density.js
+```

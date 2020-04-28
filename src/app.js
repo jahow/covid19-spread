@@ -20,6 +20,13 @@ import Overlay from "ol/Overlay";
 import { combineLatest, Subject } from "rxjs";
 
 let currentDate = 0;
+
+function getCurrentDayRatio() {
+  const current = new Date(currentDate);
+  current.setHours(0, 0, 0, 0);
+  return (currentDate - current.valueOf()) / 86400000; // one day is 86400000ms
+}
+
 function getCurrentCovidData(feature) {
   const current = new Date(currentDate);
   current.setHours(0, 0, 0, 0);
@@ -30,16 +37,33 @@ function getCurrentCovidData(feature) {
 
   const value0 = feature.get(`data-${isoDate0}`) || 0;
   const value1 = feature.get(`data-${isoDate1}`) || 0;
-  const ratio = (currentDate - current.valueOf()) / 86400000; // one day is 86400000ms
+  const ratio = getCurrentDayRatio();
   return Math.round(value0 * (1 - ratio) + value1 * ratio);
+}
+
+function getUpcomingCovidIncrease(feature) {
+  const current = new Date(currentDate);
+  current.setHours(0, 0, 0, 0);
+  const next = new Date(current);
+  next.setHours(current.getHours() + 24);
+  const isoDate0 = current.toISOString().substr(0, 10);
+  const isoDate1 = next.toISOString().substr(0, 10);
+
+  const value0 = feature.get(`data-${isoDate0}`) || 0;
+  const value1 = feature.get(`data-${isoDate1}`) || 0;
+  return value1 - value0;
 }
 
 function getRadiusForCovidCount(count) {
   return Math.max(2, Math.sqrt(count) / 6);
 }
 
+function getStrokeWidthForIncrease(increase) {
+  return Math.max(1, increase / 200);
+}
+
 const covidFillColor = "rgba(255,92,0,0.75)";
-const covidStrokeColor = "rgba(255,218,206,0.4)";
+const covidStrokeColor = "rgba(255,254,127,0.75)";
 
 const densityStyleCache = {};
 const covidStyleCache = {};
@@ -71,18 +95,25 @@ function covidStyleFn(feature) {
   let style = covidStyleCache[key];
 
   if (!style) {
-    style = new Style({
-      image: new Circle({
-        fill: new Fill({
-          color: covidFillColor
-        }),
-        stroke: new Stroke({
-          color: covidStrokeColor,
-          width: 2
-        }),
-        radius: 0
+    style = [
+      new Style({
+        image: new Circle({
+          fill: new Fill({
+            color: covidFillColor
+          }),
+          radius: 0
+        })
+      }),
+      new Style({
+        image: new Circle({
+          stroke: new Stroke({
+            color: covidStrokeColor,
+            width: 2
+          }),
+          radius: 0
+        })
       })
-    });
+    ];
     covidStyleCache[key] = style;
   }
 
@@ -92,12 +123,19 @@ function covidStyleFn(feature) {
   }
 
   const radius = getRadiusForCovidCount(currentValue);
-  style.getImage().setRadius(radius);
-  const strokeWidth = Math.max(2, 10 - radius); // this is to insure a minimum circle size
-  style
+  style[0].getImage().setRadius(radius);
+
+  let strokeWidth = 0;
+  const increase = getUpcomingCovidIncrease(feature);
+  if (increase > 0) {
+    strokeWidth = Math.max(strokeWidth, getStrokeWidthForIncrease(increase));
+  }
+  style[1].getImage().setRadius(radius + strokeWidth / 2);
+  style[1]
     .getImage()
     .getStroke()
     .setWidth(strokeWidth);
+
   return style;
 }
 
@@ -147,20 +185,35 @@ export function init() {
     "circle",
     "<a href='https://github.com/CSSEGISandData/COVID-19'>John Hopkins University</a>",
     [100, 1000, 4000, 10000, 40000].map(count => ({
-      label: `${count.toLocaleString()} deaths`,
+      label: count.toLocaleString(),
       color: covidFillColor,
       radius: getRadiusForCovidCount(count)
     }))
   );
   document.querySelector(".covid-legend").appendChild(covidLegend);
 
+  const covidIncreaseLegend = document.createElement("legend-block");
+  covidIncreaseLegend.setStyles(
+    "Daily reported casualties",
+    "circle",
+    "<a href='https://github.com/CSSEGISandData/COVID-19'>John Hopkins University</a>",
+    [100, 500, 1000, 2000].map(increase => ({
+      label: increase.toLocaleString(),
+      color: covidFillColor,
+      borderColor: covidStrokeColor,
+      radius: 10,
+      border: getStrokeWidthForIncrease(increase)
+    }))
+  );
+  document.querySelector(".covid-inc-legend").appendChild(covidIncreaseLegend);
+
   const densityLegend = document.createElement("legend-block");
   densityLegend.setStyles(
-    "Population density",
+    "Population density (per km²)",
     "square",
     "<a href='https://datahub.io/world-bank/en.pop.dnst'>World Bank</a>",
     [0, 100, 200, 300, 400].map(density => ({
-      label: `${density} per km²`,
+      label: density,
       color: getDensityFillColor(density),
       radius: 12
     }))
